@@ -1,0 +1,26 @@
+body {
+      padding: 100px;
+    }
+
+    .fileDiv {
+      float: left;
+      width: 100px;
+      height: 100px;
+      text-align: center;
+      line-height: 100px;
+      font-size: 12px;
+      border: 1px solid #ccc;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .selected {
+      border: 1px solid red;
+      background-color: #D6DFF7;
+      cursor: move;
+    }
+
+    h3 {
+      text-align: center;
+      padding-bottom: 50px
+    }
