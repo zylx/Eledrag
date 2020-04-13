@@ -6,7 +6,7 @@
     //开启严格模式
     "use strict";
 
-    let _global;
+    var _global;
 
     //构造函数定义一个类  传参数
     function Eledrag() {};
@@ -22,7 +22,7 @@
 
         // 扩展自定义配置
         _extend: function (o, n, override) {
-            for (let key in n) {
+            for (var key in n) {
                 if (n.hasOwnProperty(key) && (!o.hasOwnProperty(key) || override)) {
                     o[key] = n[key];
                 }
@@ -33,70 +33,64 @@
         // 初始化配置
         _init: function (opt) {
 
-            let _this = this;
+            var _this = this;
 
             // 默认参数 和 初始化 暴露的内部方法
-            let def = {
+            var def = {
                 selectBoxId: 'selectBox',
-                selectItemClass: 'fileDiv',
-                selectedClass: 'selected'
+                itemIndex: 'index',
+                itemCLass: 'fileDiv',
+                itemSelectedCLass: 'selected'
             };
 
-             // 配置参数
+            // 配置参数
             _this.def = _this._extend(def, opt, true);
 
             // 鼠标按下
-            document.addEventListener('mousedown', function (e) {
+            _this._addEvent(document, 'mousedown', function (e) {
 
                 _this.isSelect = true;
 
-                let _ev = e || window.event;
-                let target = _ev.target || _ev.srcElement;
-                console.log(target);
+                var _ev = e || window.event;
+                _this.target = _ev.target || _ev.srcElement;
 
-                let selectBoxId = _this.def.selectBoxId;
-                let selectItemClass = _this.def.selectItemClass;
-                let selectedClass = _this.def.selectedClass;
+                var selectBoxId = _this.def.selectBoxId;
+                var itemCLass = _this.def.itemCLass;
+                var itemSelectedCLass = _this.def.itemSelectedCLass;
 
                 // 鼠标指针开始点击位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
                 _this.startX = _ev.x || _ev.clientX;
                 _this.startY = _ev.y || _ev.clientY;
 
                 // 只有在被选中的元素之外点击和拖动才有效
-                if (target.className.indexOf(selectedClass) === -1) {
+                if (_this.target.className.indexOf(itemSelectedCLass) === -1) {
 
                     // 如果存在旧的选框元素节点，则先清除
-                    _this._removeELe(document.getElementById(selectBoxId));
+                    // _this._removeELe(document.getElementById(selectBoxId));
 
                     _this.selectList = [];
-                    let fileNodes = document.getElementsByClassName(selectItemClass);
-                    console.log(fileNodes);
+                    var fileNodes = document.querySelectorAll('.' + itemCLass);
+                    // console.log(fileNodes);
                     for (var i = 0; i < fileNodes.length; i++) {
-                        if (fileNodes[i].className.indexOf(selectItemClass) !== -1) {
-                            fileNodes[i].className = selectItemClass;
+                        if (fileNodes[i].className.indexOf(itemCLass) !== -1) {
+                            fileNodes[i].className = itemCLass;
                             _this.selectList.push(fileNodes[i]);
                         }
                     }
-                    console.log(_this.selectList);
 
-                    // 创建选框
-                    _this.selectBox = _this._createSelectBox();
+                    _this.selectBox = _this._createSelectBox(); // 创建选框元素
 
-                    // 选中目标元素
-                    _this._targetSelect();
+                    _this._targetSelect(); // 选中目标元素
 
                 } else {
 
-                    // 已选中元素拖动
-                    _this._targetDrag(target);
+                    _this._targetDrag(); // 已选中元素拖拽
 
                 }
 
-                // 鼠标松开
-                _this._mouseup();
+                _this._mouseup(); // 鼠标松开
 
-                // 阻止事件冒泡
-                _this._clearEventBubble(_ev);
+                _this._clearEventBubble(_ev); // 阻止事件冒泡
 
             })
 
@@ -105,36 +99,35 @@
         // 选中目标元素
         _targetSelect: function () {
 
-            let _this = this;
+            var _this = this;
 
-            document.addEventListener('mousemove', function (e) {
+            _this._addEvent(document, 'mousemove', function (e) {
 
-                let _ev = e || window.event;
+                var _ev = e || window.event;
 
                 if (_this.isSelect) {
 
-                    let selectBox = _this.selectBox;
-                    let selectList = _this.selectList;
-                    let selectItemClass = _this.def.selectItemClass;
-                    let selectedClass = _this.def.selectedClass;
+                    var selectBox = _this.selectBox; // 选框元素
+                    var selectList = _this.selectList; // 可拖拽元素数组集合
+                    var itemCLass = _this.def.itemCLass; // 可拖拽元素class标识
+                    var itemSelectedCLass = _this.def.itemSelectedCLass; // 被选中元素附加样式
 
-                    if (selectBox.style.display === "none") {
-                        selectBox.style.display = "block";
-                    }
+                    (selectBox.style.display === "none") && (selectBox.style.display = "block");
 
-                    // 鼠标指针开始点击位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
-                    let startX = _this.startX;
-                    let startY = _this.startY;
-                    // 鼠标指针移动点的位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
-                    let moveX = null;
-                    let moveY = null;
+                    // 鼠标开始点击位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
+                    var startX = _this.startX;
+                    var startY = _this.startY;
 
-                    moveX = _ev.x || _ev.clientX;
-                    moveY = _ev.y || _ev.clientY;
+                    // 鼠标当前的位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
+                    var moveX = null;
+                    var moveY = null;
+
+                    moveX = _ev.pageX || _ev.clientX;
+                    moveY = _ev.pageY || _ev.clientY;
                     _this.moveX = moveX;
                     _this.moveY = moveY;
-                    console.log('startX: ' + startX, 'startY: ' + startY);
-                    console.log('moveX: ' + moveX, 'moveY: ' + moveY);
+                    // console.log('startX: ' + startX, 'startY: ' + startY);
+                    // console.log('moveX: ' + moveX, 'moveY: ' + moveY);
 
                     selectBox.style.left = Math.min(moveX, startX) + "px";
                     selectBox.style.top = Math.min(moveY, startY) + "px";
@@ -142,34 +135,27 @@
                     selectBox.style.height = Math.abs(moveY - startY) + "px";
 
                     // ---------------- 关键算法 ---------------------  
-                    let _l = selectBox.offsetLeft,
+                    var _l = selectBox.offsetLeft,
                         _t = selectBox.offsetTop;
 
-                    let _w = selectBox.offsetWidth,
+                    var _w = selectBox.offsetWidth,
                         _h = selectBox.offsetHeight;
 
-                    console.log('selectBox.offsetLeft: ' + _l);
-                    console.log('selectBox.offsetTop: ' + _t);
-                    console.log('selectBox.offsetWidth: ' + _w);
-                    console.log('selectBox.offsetHeight: ' + _h);
+                    for (var i = 0; i < selectList.length; i++) {
 
-                    for (let i = 0; i < selectList.length; i++) {
-
-                        let sl = selectList[i].offsetWidth + selectList[i].offsetLeft;
-                        let st = selectList[i].offsetHeight + selectList[i].offsetTop;
+                        var sl = selectList[i].offsetWidth + selectList[i].offsetLeft;
+                        var st = selectList[i].offsetHeight + selectList[i].offsetTop;
 
                         if (sl > _l && st > _t && selectList[i].offsetLeft < _l + _w && selectList[i].offsetTop < _t + _h) {
 
-                            if (selectList[i].className.indexOf(selectedClass) === -1) {
-                                selectList[i].className = selectList[i].className + " " + selectedClass;
+                            if (selectList[i].className.indexOf(itemSelectedCLass) === -1) {
+                                selectList[i].className = selectList[i].className + " " + itemSelectedCLass;
                             }
 
                         } else {
 
-                            console.log('响应');
-
-                            if (selectList[i].className.indexOf(selectedClass) !== -1) {
-                                selectList[i].className = selectItemClass;
+                            if (selectList[i].className.indexOf(itemSelectedCLass) !== -1) {
+                                selectList[i].className = itemCLass;
                             }
 
                         }
@@ -178,7 +164,6 @@
 
                 }
 
-                // 阻止事件冒泡
                 _this._clearEventBubble(_ev);
 
             })
@@ -186,125 +171,205 @@
         },
 
         // 已选中元素拖动
-        _targetDrag: function (target) {
+        _targetDrag: function () {
 
-            // let targetItems = document.getElementsByClassName(this.def.selectItemClass);
-            // console.log(targetItems);
+            var _this = this;
+            var target = _this.target;
 
-            let _this = this;
+            var itemIndex = _this.def.itemIndex; // 页面可拖拽元素的index索引，可自定义属性名
+            var itemSelectedCLass = _this.def.itemSelectedCLass; // 被选中元素附加样式
+            var selectedItemList = _this.selectedItemList; // 被选中元素数组集合
+            // console.log(selectedItemList);
 
-            // 鼠标距离元素左上角偏离值
-            let mOffsetX = _this.startX - target.offsetLeft;
-            let mOffsetY = _this.startY - target.offsetTop;
+            // 鼠标距离当前被拖动元素左上角的偏离值
+            var mOffsetX = _this.startX - target.offsetLeft;
+            var mOffsetY = _this.startY - target.offsetTop;
 
-            // console.log(target);
-            target.addEventListener('mousemove', function (e) {
+            _this._addEvent(target, 'mousemove', function (e) {
 
-                let _ev = e || window.event;
-                let curTarget = _ev.target || _ev.srcElement;
+                var _ev = e || window.event;
 
-                let mMoveX = _ev.pageX || _ev.clientX;
-                let mMoveY = _ev.pageY || _ev.clientY;
-                // let fileNodes = document.getElementsByClassName(selectItemClass);
+                // 鼠标当前的位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
+                var mMoveX = _ev.pageX || _ev.clientX;
+                var mMoveY = _ev.pageY || _ev.clientY;
 
-                // console.log(fileNodes);
-                console.log(_ev);
-                // console.log(curTarget);
-                if (_this.isSelect) {
-                    curTarget.style.position = 'absolute';
-                    curTarget.style.left = mMoveX - mOffsetX + 'px';
-                    curTarget.style.top = mMoveY - mOffsetY + 'px';
+                if (_this.isSelect && (target.className.indexOf(itemSelectedCLass) !== -1)) {
+
+                    target.style.position = 'absolute';
+                    target.style.left = mMoveX - mOffsetX + 'px';
+                    target.style.top = mMoveY - mOffsetY + 'px';
+
+                    if (selectedItemList.length > 0) {
+                        for (var i = 0; i < selectedItemList.length; i++) {
+
+                            var item = selectedItemList[i];
+
+                            // 当前鼠标不在其上的其它被拖动元素
+                            if ((item.index !== target.getAttribute(itemIndex)) && (item.className.indexOf(itemSelectedCLass) !== -1)) {
+
+                                // 鼠标距离当前其它被拖动元素左上角的偏离值
+                                // startOffsetLeft：未拖拽前，元素相对于父文档的 x 像素坐标
+                                // startOffsetTop：未拖拽前，元素相对于父文档的 y 像素坐标
+                                var mOtherOffsetX = _this.startX - item.startOffsetLeft;
+                                var mOtherOffsetY = _this.startY - item.startOffsetTop;
+
+                                item.style.position = 'absolute';
+                                item.style.left = mMoveX - mOtherOffsetX + 'px';
+                                item.style.top = mMoveY - mOtherOffsetY + 'px';
+                            }
+                        }
+                    }
                 }
 
+                _this._clearEventBubble(_ev);
+
             })
+
         },
 
         // 鼠标松开事件
         _mouseup: function () {
 
-            let _this = this;
+            var _this = this;
 
-            document.addEventListener('mouseup', function (e) {
+            _this._addEvent(document, 'mouseup', function (e) {
 
                 _this.isSelect = false;
 
-                let _ev = e || window.event;
-                let target = _ev.target || _ev.srcElement;
-                let selectItemClass = _this.def.selectItemClass;
-                if (target.className === selectItemClass) {
-                    target.className = selectItemClass + " " + _this.def.selectedClass;
-                }
-                // console.log(_this.selectList);
+                var target = _this.target;
+
+                var itemCLass = _this.def.itemCLass;
+                (target.className === itemCLass) && (target.className = itemCLass + " " + _this.def.itemSelectedCLass);
 
                 if (_this.selectBox) {
-                    _this._removeELe(_this.selectBox);
-                    _this._showSelDiv(_this.selectList);
+                    _this._removeNode(_this.selectBox);
+                    _this.selectedItemList = _this._getSelectedItemList();
+                    console.log(_this.selectedItemList);
                 }
-                _this.selectList = null,
-                    _this.selectBox = null,
-                    _this.startX = null,
-                    _this.startY = null,
-                    _this.moveX = null,
-                    _this.moveY = null,
-                    e = null;
+
+                // _this.selectList = null,
+                // _this.selectBox = null,
+                // _this.startX = null,
+                // _this.startY = null,
+                // _this.moveX = null,
+                // _this.moveY = null,
+                // e = null;
+
             })
 
         },
 
         // 创建选框
         _createSelectBox: function () {
-            let selectBox = document.createElement("div");
+
+            var selectBox = document.createElement("div");
             selectBox.id = this.def.selectBoxId;
             selectBox.style.cssText = "display:none;position:absolute;width:0px;height:0px;font-size:0px;margin:0px;padding:0px;border:1px dashed #0099FF;background-color:#C3D5ED;z-index:1000;filter:alpha(opacity:60);opacity:0.6;";
             document.body.appendChild(selectBox);
             return selectBox;
+
+        },
+
+        // 获取已选中目标元素
+        _getSelectedItemList: function () {
+
+            var itemIndex = this.def.itemIndex;
+            var selectList = this.selectList;
+            var selectedItemList = [];
+
+            if (selectList.length > 0) {
+                for (var i = 0; i < selectList.length; i++) {
+                    if (selectList[i].className.indexOf(this.def.itemSelectedCLass) !== -1) {
+                        selectList[i][itemIndex] = selectList[i].getAttribute(itemIndex);
+                        // 保存元素在页面上的初始偏离页面左上角坐标，在拖拽时会用到这些值
+                        selectList[i]['startOffsetLeft'] = selectList[i].offsetLeft;
+                        selectList[i]['startOffsetTop'] = selectList[i].offsetTop;
+                        selectedItemList.push(selectList[i]);
+                    }
+                }
+            }
+
+            return selectedItemList;
+
+        },
+
+        // 事件监听兼容性写法，兼容IE6、7、8
+        _addEvent: function (ele, ev, fn) {
+
+            // 判断浏览器是否支持该方法，如果支持那么调用，如果不支持换其他方法
+            if (ele.addEventListener) {
+                ele.addEventListener(ev, fn);
+            } else if (ele.attachEvent) {
+                ele.attachEvent("on" + ev, fn);
+            } else {
+                ele["on" + ev] = fn;
+            }
+
+        },
+
+        _removeEvent: function (ele, ev, fn) {
+
+            if (ele.removeEventListener) {
+                ele.removeEventListener(ev, fn);
+            } else if (ele.detachEvent) {
+                ele.detachEvent("on" + ev, fn);
+            } else {
+                ele["on" + ev] = null;
+            }
+
         },
 
         // 阻止事件冒泡
         _clearEventBubble: function (e) {
 
-            if (e.stopPropagation)
-                e.stopPropagation();
-            else
-                e.cancelBubble = true;
+            // if (e.stopPropagation) // 非IE 
+            //     e.stopPropagation();
+            // else
+            //     e.cancelBubble = true;
 
-            if (e.preventDefault)
-                e.preventDefault();
-            else
-                e.returnValue = false;
+            // if (e.preventDefault)
+            //     e.preventDefault();
+            // else
+            //     e.returnValue = false;
 
-        },
+            e.stopPropagation && e.stopPropagation() || (e.cancelBubble = true);
 
-        _showSelDiv: function (arr) {
-            let count = 0;
-            let selInfo = "";
-            for (let i = 0; i < arr.length; i++) {
-                if (arr[i].className.indexOf("selected") !== -1) {
-                    count++;
-                    selInfo += arr[i].innerHTML + "\n";
-                }
-            }
-            console.log("共选择 " + count + " 个文件，分别是：\n" + selInfo);
+            e.preventDefault && e.preventDefault() || (e.returnValue = false);
+
         },
 
         // 删除元素节点
-        _removeELe: function (ele) {
-            if (ele) {
-                ele.remove();
+        _removeNode: function (ele) {
+
+            if (!this._isIE()) {
+                ele && ele.remove()
+            } else {
+                ele && ele.parentNode.removeChild(ele);
             }
+
+        },
+
+        _isIE: function () {
+
+            return ((window.ActiveXObject || "ActiveXObject" in window) || (/Trident\/7\./).test(navigator.userAgent)) && true || false;
+
         },
 
         // 类数组对象转化为数组
         _toArray: function (s) {
-            let result = [];
+
+            var result = [];
+
             try {
                 result = Array.prototype.slice.call(s);
             } catch (error) {
-                for (let i = 0; i < s.length; i++) {
+                for (var i = 0; i < s.length; i++) {
                     result.push(fileNodes[i]);
                 }
             }
+
             return result;
+
         }
 
     };
