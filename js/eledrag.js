@@ -52,18 +52,29 @@
                 _this.isSelect = true;
 
                 var _ev = e || window.event;
-                _this.target = _ev.target || _ev.srcElement;
+                var target = _ev.target || _ev.srcElement;
+                _this.target = target;
 
-                var selectBoxId = _this.def.selectBoxId;
+                // var selectBoxId = _this.def.selectBoxId;
                 var itemCLass = _this.def.itemCLass;
                 var itemSelectedCLass = _this.def.itemSelectedCLass;
+
+                // 浏览器可视区域宽高
+                var clientSize = _this._clientSize();
+                // console.log(clientSize);
+
+                // 当元素被选中时，鼠标在页面上可拖动范围边界限制
+                _this.minOffsetLeft = 0;
+                _this.maxOffsetLeft = clientSize.width - target.offsetWidth;
+                _this.minOffsetTop = 0;
+                _this.maxOffsetTop = clientSize.height - target.offsetHeight;
 
                 // 鼠标指针开始点击位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
                 _this.startX = _ev.x || _ev.clientX;
                 _this.startY = _ev.y || _ev.clientY;
 
                 // 只有在被选中的元素之外点击和拖动才有效
-                if (_this.target.className.indexOf(itemSelectedCLass) === -1) {
+                if (target.className.indexOf(itemSelectedCLass) === -1) {
 
                     // 如果存在旧的选框元素节点，则先清除
                     // _this._removeELe(document.getElementById(selectBoxId));
@@ -182,12 +193,14 @@
             // console.log(selectedItemList);
 
             // 鼠标距离当前被拖动元素左上角的偏离值
-            var mOffsetX = _this.startX - target.offsetLeft;
-            var mOffsetY = _this.startY - target.offsetTop;
+            var mItemOffsetX = _this.startX - target.offsetLeft;
+            var mItemOffsetY = _this.startY - target.offsetTop;
+
 
             _this._addEvent(target, 'mousemove', function (e) {
 
                 var _ev = e || window.event;
+                // console.log(_ev);
 
                 // 鼠标当前的位置相对于父文档的 x/y 像素坐标(亦即相对于当前窗口)
                 var mMoveX = _ev.pageX || _ev.clientX;
@@ -196,8 +209,26 @@
                 if (_this.isSelect && (target.className.indexOf(itemSelectedCLass) !== -1)) {
 
                     target.style.position = 'absolute';
-                    target.style.left = mMoveX - mOffsetX + 'px';
-                    target.style.top = mMoveY - mOffsetY + 'px';
+
+                    // 鼠标指针所在元素相对于父文档的 x/y 像素坐标
+                    var itemOffsetX = mMoveX - mItemOffsetX;
+                    var itemOffsetY = mMoveY - mItemOffsetY;
+                    
+                    // 元素拖动边界限制
+                    if(itemOffsetX < _this.minOffsetLeft){
+                        itemOffsetX = _this.minOffsetLeft;
+                    } else if (itemOffsetX > _this.maxOffsetLeft) {
+                        itemOffsetX = _this.maxOffsetLeft;
+                    }
+    
+                    if(itemOffsetY < _this.minOffsetTop){
+                        itemOffsetY = _this.minOffsetTop;
+                    } else if (itemOffsetY > _this.maxOffsetTop) {
+                        itemOffsetY = _this.maxOffsetTop;
+                    }
+                    
+                    target.style.left = itemOffsetX + 'px';
+                    target.style.top = itemOffsetY + 'px';
 
                     if (selectedItemList.length > 0) {
                         for (var i = 0; i < selectedItemList.length; i++) {
@@ -210,12 +241,16 @@
                                 // 鼠标距离当前其它被拖动元素左上角的偏离值
                                 // startOffsetLeft：未拖拽前，元素相对于父文档的 x 像素坐标
                                 // startOffsetTop：未拖拽前，元素相对于父文档的 y 像素坐标
-                                var mOtherOffsetX = _this.startX - item.startOffsetLeft;
-                                var mOtherOffsetY = _this.startY - item.startOffsetTop;
+                                var mOtherItemOffsetX = _this.startX - item.startOffsetLeft;
+                                var mOtherItemOffsetY = _this.startY - item.startOffsetTop;
+
+                                // 其他被拖动元素相对于父文档的 x/y 像素坐标
+                                var otherItemOffsetX = mMoveX - mOtherItemOffsetX;
+                                var otherItemOffsetY = mMoveY - mOtherItemOffsetY;
 
                                 item.style.position = 'absolute';
-                                item.style.left = mMoveX - mOtherOffsetX + 'px';
-                                item.style.top = mMoveY - mOtherOffsetY + 'px';
+                                item.style.left = otherItemOffsetX + 'px';
+                                item.style.top = otherItemOffsetY + 'px';
                             }
                         }
                     }
@@ -354,6 +389,27 @@
             return ((window.ActiveXObject || "ActiveXObject" in window) || (/Trident\/7\./).test(navigator.userAgent)) && true || false;
 
         },
+
+        // 获取浏览器可视区域宽高
+        _clientSize() {
+
+            return {
+                width: window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth,
+                height: window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+            }
+
+        },
+
+        // 获取元素宽高
+        _elementSize(ele) {
+
+            return {
+                width: ele.clientWidth || parseInt(getComputedStyle(ele)['width']),
+                height: ele.clientHeight || parseInt(getComputedStyle(ele)['height'])
+            }
+
+        },
+
 
         // 类数组对象转化为数组
         _toArray: function (s) {
